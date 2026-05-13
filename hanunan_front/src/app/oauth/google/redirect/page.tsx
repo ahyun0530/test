@@ -10,7 +10,7 @@ export default function GoogleRedirect() {
 
     if (code) {
       // 백엔드 구글 로그인 엔드포인트로 전송
-      axios.post(`${process.env.NEXT_PUBLIC_API_URL}/member/google/doLogin`, {
+      axios.post(`http://localhost:8081/member/google/doLogin`, {
         code: code
       })
       .then(res => {
@@ -18,10 +18,12 @@ export default function GoogleRedirect() {
         
         // 토큰 및 사용자 정보 저장 (카카오와 동일한 방식)
         localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify({
-          nickname: data.nickname || data.email?.split('@')[0] || '사용자',
-          email: data.email,
-        }));
+        
+        const userData = {
+          nickname: data.nickname || "구글 사용자", 
+          email: data.email
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
         
         // 메인 페이지로 이동
         window.location.href = '/';

@@ -199,6 +199,7 @@ export interface CitizenReport {
   reportedAt: string;
   targetId: number;
   targetType: 'DISASTER' | 'WEATHER' | 'FIRE' | 'SAFETY';
+  reliability: number;
 }
 
 let MOCK_CITIZEN_REPORTS: CitizenReport[] = [
@@ -219,7 +220,8 @@ let MOCK_CITIZEN_REPORTS: CitizenReport[] = [
     likeCount: 5,
     reportedAt: "2026-04-03T16:40:00",
     targetId: 1,
-    targetType: 'DISASTER'
+    targetType: 'DISASTER',
+    reliability: 100
   },
   {
     id: 2,
@@ -238,7 +240,8 @@ let MOCK_CITIZEN_REPORTS: CitizenReport[] = [
     likeCount: 2,
     reportedAt: "2026-04-03T16:47:00",
     targetId: 2,
-    targetType: 'DISASTER'
+    targetType: 'DISASTER',
+    reliability: 100
   },
   {
     id: 3,
@@ -257,8 +260,69 @@ let MOCK_CITIZEN_REPORTS: CitizenReport[] = [
     likeCount: 10,
     reportedAt: "2026-04-03T16:40:00",
     targetId: 101,
-    targetType: 'FIRE'
-  }
+    targetType: 'FIRE',
+    reliability: 100
+  },
+{
+    id: 4,
+    userId: 12,
+    nickname: "의심스러운사용자",
+    category: "화재",
+    latitude: 35.146,
+    longitude: 126.928,
+    userLatitude: 35.146,
+    userLongitude: 126.928,
+    gpsVerified: true,
+    locationName: "조선대 인근",
+    description: "신뢰도 45점 테스트용입니다.",
+    imageUrl: [],
+    status: 'ACTIVE',
+    likeCount: 0,
+    reportedAt: "2026-04-03T17:00:00",
+    targetId: 2,
+    targetType: 'DISASTER',
+    reliability: 45 // 70 미만이므로 UI에서 흐릿하게 보이거나 필터링 대상
+  },
+  {
+    id: 5,
+    userId: 13,
+    nickname: "길가던사람",
+    category: "화재",
+    latitude: 35.146,
+    longitude: 126.928,
+    userLatitude: 35.146,
+    userLongitude: 126.928,
+    gpsVerified: true,
+    locationName: "서석동 주민센터 인근",
+    description: "신뢰도 75점 테스트용입니다.",
+    imageUrl: [],
+    status: 'ACTIVE',
+    likeCount: 1,
+    reportedAt: "2026-04-03T17:05:00",
+    targetId: 2,
+    targetType: 'DISASTER',
+    reliability: 75 // 정상 노출 기준
+  },
+  {
+    id: 6,
+    userId: 14,
+    nickname: "장난감",
+    category: "화재",
+    latitude: 35.146,
+    longitude: 126.928,
+    userLatitude: 35.146,
+    userLongitude: 126.928,
+    gpsVerified: true,
+    locationName: "동구청 앞",
+    description: "신뢰도 70점 테스트용입니다.",
+    imageUrl: [],
+    status: 'ACTIVE',
+    likeCount: 0,
+    reportedAt: "2026-04-03T17:10:00",
+    targetId: 2,
+    targetType: 'DISASTER',
+    reliability: 70 // 70 미만이므로 흐릿하게 처리 대상
+  }
 ];
 export const createCitizenReport = async (
   reportData: Omit<CitizenReport, 'id' | 'reportedAt' | 'gpsVerified' | 'status' | 'likeCount' | 'locationName'>
@@ -290,6 +354,7 @@ export const createCitizenReport = async (
           status: 'ACTIVE',
           likeCount: 0,
           nickname: "사용자",
+          reliability: 100
         };
 
         MOCK_CITIZEN_REPORTS = [newReport, ...MOCK_CITIZEN_REPORTS];
@@ -621,7 +686,7 @@ export const getMyCitizenReports = async (userId: number): Promise<CitizenReport
   const allReports = await getCitizenReports();
   return allReports.filter(report => report.userId === userId);
 };
-
+//0512
 export interface FireMarker {
   id: number;
   sn: string;
@@ -632,11 +697,11 @@ export interface FireMarker {
   longitude: number;
   createdAt: string;
 }
-
-export const getFireMarkers = async (): Promise<FireMarker[]> => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fire/markers`);
-  if (!res.ok) throw new Error('화재 마커 조회 실패');
-  return res.json();
+//0512
+export const fetchFireMarkers = async (): Promise<FireMarker[]> => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fire/markers`);
+  if (!response.ok) throw new Error('화재 마커를 불러오는데 실패했습니다.');
+  return response.json();
 };
 
 export const testFireMarker = async (message: string, rcptnRgnNm?: string): Promise<FireMarker> => {
@@ -667,4 +732,11 @@ export const extractDisasterInfo = async (message: string): Promise<DisasterExtr
   });
   if (!res.ok) throw new Error('재난문자 분석 실패');
   return res.json();
+};
+
+
+//신뢰도 기준점 상수화
+export const RELIABILITY_LIMITS = {
+  WARNING: 70, // 70점 이하: 투명도 조절 (주의)
+  BLIND: 50,   // 50점 이하: 화면에서 숨김 (차단)
 };

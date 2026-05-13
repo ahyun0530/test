@@ -8,17 +8,19 @@ export default function KakaoRedirect() {
     const code = new URL(window.location.href).searchParams.get('code');
 
     if (code) {
-      axios.post(`${process.env.NEXT_PUBLIC_API_URL}/member/kakao/doLogin`, {
+      axios.post(`http://localhost:8081/member/kakao/doLogin`, {
         code: code
       })
       .then(res => {
         const data = res.data; 
         
         localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify({
-          nickname: data.nickname || data.email?.split('@')[0] || '사용자',
-          email: data.email,
-        }));
+        
+        const userData = {
+          nickname: data.nickname || "사용자", 
+          email: data.email
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
         
         window.location.href = '/';
       })
